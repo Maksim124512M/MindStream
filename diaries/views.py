@@ -1,4 +1,5 @@
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -126,5 +127,14 @@ class UnsubscribeView(APIView):
         return Response('Ви успішно відписались від користувача')
 
 
+class FilterPosts(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, category_name):
+        posts = Post.objects.filter(
+            category=category_name,
+            is_public=True,
+        )
+        serializer = PostSerializer(posts, many=True)
 
+        return Response(serializer.data)

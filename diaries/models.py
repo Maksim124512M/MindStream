@@ -21,12 +21,36 @@ class User(AbstractUser):
 
 
 class Post(models.Model):
+    CATEGORY = (
+        ('personal_life', 'Personal life'),
+        ('traveling', 'Traveling'),
+        ('education', 'Education'),
+        ('career', 'Career'),
+        ('psychology', 'Psychology'),
+        ('health', 'Health'),
+        ('hobbys', 'Hobbys'),
+        ('art', 'Art'),
+        ('music', 'Music'),
+        ('films', 'Films'),
+        ('books', 'Books'),
+        ('technology', 'Technology'),
+        ('science', 'Science'),
+        ('sport', 'Sport'),
+        ('cooking', 'Cooking'),
+        ('policy', 'Policy'),
+        ('philosophy', 'Philosophy'),
+        ('self_development', 'Self-development'),
+        ('motivation', 'Motivation'),
+        ('social', 'Social'),
+    )
+
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author')
     title = models.CharField(max_length=255)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField()
+    category = models.CharField(max_length=255, choices=CATEGORY)
 
     def __str__(self):
         return self.title

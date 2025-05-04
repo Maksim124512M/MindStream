@@ -8,6 +8,7 @@ from .views import (
     DeletePostView,
     SubscribeView,
     UnsubscribeView,
+    FilterPosts,
 )
 
 
@@ -19,4 +20,5 @@ urlpatterns = [
     path('post/update/<int:pk>/', UpdatePostView.as_view(), name='post_update'),
     path('subscribe/<int:pk>/', SubscribeView.as_view(), name='subscribe'),
     path('unsubscribe/<int:pk>/', UnsubscribeView.as_view(), name='unsubscribe'),
+    path('post/filter/<str:category_name>/', FilterPosts.as_view(), name='post_filter'),
 ]
