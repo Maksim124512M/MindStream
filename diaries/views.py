@@ -3,8 +3,10 @@ from django.core.exceptions import PermissionDenied
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
 
-from .models import Post
+from .models import Post, Subscription, User
 from .serializers import PostSerializer
 
 
@@ -66,5 +68,63 @@ class DeletePostView(generics.DestroyAPIView):
         post.delete()
         post.save()
         return Response('Запис успішно видалений')
+
+
+class SubscribeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            subscribed_to = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            raise NotFound('Користувача не знайдено.')
+
+        subscriber = request.user
+
+        if subscribed_to.id == subscriber.id:
+            return Response('Неможливо підписатись на самого себе')
+
+        subscription, created = Subscription.objects.get_or_create(
+            subscriber=subscriber,
+            subscribed_to=subscribed_to,
+        )
+
+        print(created)
+
+        if not created:
+            return Response('Неможливо підписатися двічі')
+
+        subscribed_to.subscribers += 1
+        subscribed_to.save()
+
+        return Response('Ви успішно підписались на користувача')
+
+
+class UnsubscribeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            unsubscribed_to = User.objects.get(id=pk)
+        except User.DoesNotExist:
+            raise NotFound('Користувача не знайдено.')
+        unsubscriber = request.user
+
+        if unsubscribed_to.id == unsubscriber.id:
+            return Response('Неможливо відписатись від самого себе')
+
+        subscription = Subscription.objects.get(
+            subscriber=unsubscriber,
+            subscribed_to=unsubscribed_to,
+        )
+
+        subscription.delete()
+        if unsubscribed_to.subscribers > 0:
+            unsubscribed_to.subscribers -= 1
+            unsubscribed_to.save()
+
+        return Response('Ви успішно відписались від користувача')
+
+
 
 

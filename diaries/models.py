@@ -10,6 +10,7 @@ class User(AbstractUser):
     )
 
     role = models.CharField(max_length=255, choices=ROLES)
+    subscribers = models.PositiveIntegerField(default=0)
 
     class Meta:
         verbose_name = 'User'
@@ -33,3 +34,11 @@ class Post(models.Model):
     class Meta:
         verbose_name = 'Post'
         verbose_name_plural = 'Posts'
+
+
+class Subscription(models.Model):
+    subscriber = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriber')
+    subscribed_to = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('subscriber', 'subscribed_to')
