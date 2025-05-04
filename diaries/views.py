@@ -1,5 +1,4 @@
 from django.core.exceptions import PermissionDenied
-from django.http import JsonResponse
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -7,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 
-from .models import Post, Subscription, User
-from .serializers import PostSerializer
+from .models import Post, Subscription, User, Comment
+from .serializers import PostSerializer, CommentSerializer
 
 
 class CreatePostView(generics.CreateAPIView):
@@ -138,3 +137,47 @@ class FilterPosts(APIView):
         serializer = PostSerializer(posts, many=True)
 
         return Response(serializer.data)
+
+
+class CreateCommentView(generics.CreateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CommentsListView(generics.ListAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CommentUpdateView(generics.UpdateAPIView):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        comment = super().get_object()
+        user = self.request.user
+
+        if user != comment.author and user.role != '2':
+            raise PermissionDenied('У вас немає прав на редагування цього запису.')
+
+        return comment
+
+
+class CommentDeleteView(generics.DestroyAPIView):
+    queryset = Comment.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            instance = Comment.objects.get(pk=pk)
+        except Comment.DoesNotExist:
+            return Response({'detail': 'Не знайдено.'})
+
+        if request.user != instance.author and request.user.role != '2':
+            raise PermissionDenied('У вас немає прав на видалення цього запису.')
+
+        instance.delete()
+        return Response({'detail': 'Коментар видалено.'})
