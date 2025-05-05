@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 
-from .models import Post, Subscription, User, Comment
+from .models import Post, Subscription, User, Comment, Like, Dislike
 from .serializers import PostSerializer, CommentSerializer
 
 
@@ -181,3 +181,43 @@ class CommentDeleteView(generics.DestroyAPIView):
 
         instance.delete()
         return Response({'detail': 'Коментар видалено.'})
+
+
+class LikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = Post.objects.get(id=pk)
+
+        like, created = Like.objects.get_or_create(
+            post=post,
+            author=request.user,
+        )
+
+        if not created:
+            return Response('Ви вже поставили лайк')
+
+        post.likes += 1
+        post.save()
+
+        return Response('Ви успішно поставили лайк')
+
+
+class DislikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        post = Post.objects.get(id=pk)
+
+        like, created = Dislike.objects.get_or_create(
+            post=post,
+            author=request.user,
+        )
+
+        if not created:
+            return Response('Ви вже поставили дизлайк')
+
+        post.dislikes += 1
+        post.save()
+
+        return Response('Ви успішно поставили дизлайк')

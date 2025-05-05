@@ -13,6 +13,8 @@ from .views import (
     CommentsListView,
     CommentUpdateView,
     CommentDeleteView,
+    LikeView,
+    DislikeView,
 )
 
 
@@ -29,4 +31,6 @@ urlpatterns = [
     path('comments/', CommentsListView.as_view(), name='comments_list'),
     path('comment/update/<int:pk>/', CommentUpdateView.as_view(), name='comment_update'),
     path('comment/delete/<int:pk>/', CommentDeleteView.as_view(), name='comment_delete'),
+    path('post/like/<int:pk>/', LikeView.as_view(), name='post_like'),
+    path('post/dislike/<int:pk>/', DislikeView.as_view(), name='post_dislike'),
 ]

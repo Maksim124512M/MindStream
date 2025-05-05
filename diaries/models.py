@@ -51,6 +51,8 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField()
     category = models.CharField(max_length=255, choices=CATEGORY)
+    likes = models.PositiveIntegerField()
+    dislikes = models.PositiveIntegerField()
 
     def __str__(self):
         return self.title
@@ -77,3 +79,23 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'Comment'
         verbose_name_plural = 'Comments'
+
+
+class Like(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='liked_posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
+
+    class Meta:
+        verbose_name = 'Like'
+        verbose_name_plural = 'Likes'
+        unique_together = ('author', 'post')
+
+
+class Dislike(models.Model):
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='disliked_posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dislikes')
+
+    class Meta:
+        verbose_name = 'Dislike'
+        verbose_name_plural = 'Dislikes'
+        unique_together = ('author', 'post')
