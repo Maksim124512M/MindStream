@@ -1,6 +1,7 @@
+import uuid
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
 
 
 class User(AbstractUser):
@@ -44,6 +45,7 @@ class Post(models.Model):
         ('social', 'Social'),
     )
 
+    uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='author')
     title = models.CharField(max_length=255)
     content = models.TextField()
@@ -51,8 +53,8 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField()
     category = models.CharField(max_length=255, choices=CATEGORY)
-    likes = models.PositiveIntegerField()
-    dislikes = models.PositiveIntegerField()
+    likes = models.PositiveIntegerField(default=0)
+    dislikes = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -63,6 +65,7 @@ class Post(models.Model):
 
 
 class Subscription(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     subscriber = models.ForeignKey(User, on_delete=models.CASCADE, related_name='subscriber')
     subscribed_to = models.ForeignKey(User, on_delete=models.CASCADE)
 
@@ -71,6 +74,7 @@ class Subscription(models.Model):
 
 
 class Comment(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     content = models.CharField(max_length=255)
@@ -82,6 +86,7 @@ class Comment(models.Model):
 
 
 class Like(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='liked_posts')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='likes')
 
@@ -92,6 +97,7 @@ class Like(models.Model):
 
 
 class Dislike(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='disliked_posts')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dislikes')
 

@@ -7,7 +7,6 @@ class PostSerializer(ModelSerializer):
     class Meta:
         model = Post
         fields = '__all__'
-        read_only_fields = ('author', 'created_at', 'updated_at')
 
 
 class SubscriptionSerializer(ModelSerializer):

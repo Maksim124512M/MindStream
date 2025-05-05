@@ -28,7 +28,7 @@ class ListMyPostView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        posts = Post.objects.filter(author_id=request.user.id)
+        posts = Post.objects.filter(author_uuid=request.user.uuid)
         serializer = PostSerializer(posts, many=True)
 
         return Response(serializer.data)
@@ -38,6 +38,7 @@ class UpdatePostView(generics.UpdateAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
+    lookup_field = 'uuid'
 
     def put(self, request, *args, **kwargs):
         post = self.get_object()
@@ -57,6 +58,7 @@ class DeletePostView(generics.DestroyAPIView):
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
+    lookup_field = 'uuid'
 
     def delete(self, request, *args, **kwargs):
         post = self.get_object()
@@ -73,15 +75,15 @@ class DeletePostView(generics.DestroyAPIView):
 class SubscribeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, pk):
+    def post(self, request, uuid):
         try:
-            subscribed_to = User.objects.get(id=pk)
+            subscribed_to = User.objects.get(uuid=uuid)
         except User.DoesNotExist:
             raise NotFound('Користувача не знайдено.')
 
         subscriber = request.user
 
-        if subscribed_to.id == subscriber.id:
+        if subscribed_to.uuid == subscriber.uuid:
             return Response('Неможливо підписатись на самого себе')
 
         subscription, created = Subscription.objects.get_or_create(
@@ -103,14 +105,14 @@ class SubscribeView(APIView):
 class UnsubscribeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, pk):
+    def delete(self, request, uuid):
         try:
-            unsubscribed_to = User.objects.get(id=pk)
+            unsubscribed_to = User.objects.get(uuid=uuid)
         except User.DoesNotExist:
             raise NotFound('Користувача не знайдено.')
         unsubscriber = request.user
 
-        if unsubscribed_to.id == unsubscriber.id:
+        if unsubscribed_to.uuid == unsubscriber.uuid:
             return Response('Неможливо відписатись від самого себе')
 
         subscription = Subscription.objects.get(
@@ -170,9 +172,9 @@ class CommentDeleteView(generics.DestroyAPIView):
     queryset = Comment.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, pk):
+    def delete(self, request, uuid):
         try:
-            instance = Comment.objects.get(pk=pk)
+            instance = Comment.objects.get(uuid=uuid)
         except Comment.DoesNotExist:
             return Response({'detail': 'Не знайдено.'})
 
@@ -186,8 +188,8 @@ class CommentDeleteView(generics.DestroyAPIView):
 class LikeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, pk):
-        post = Post.objects.get(id=pk)
+    def post(self, request, uuid):
+        post = Post.objects.get(uuid=uuid)
 
         like, created = Like.objects.get_or_create(
             post=post,
@@ -206,8 +208,8 @@ class LikeView(APIView):
 class DislikeView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, pk):
-        post = Post.objects.get(id=pk)
+    def post(self, request, uuid):
+        post = Post.objects.get(uuid=uuid)
 
         like, created = Dislike.objects.get_or_create(
             post=post,
