@@ -1,40 +1,46 @@
-from django.core.exceptions import PermissionDenied
+from django.shortcuts import get_object_or_404
 
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from .models import Post, Subscription, User, Comment, Like, Dislike
 from .serializers import PostSerializer, CommentSerializer
 
-
 class CreatePostView(generics.CreateAPIView):
+    ''' View to create a post '''
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
 
 
 class ListPostView(generics.ListAPIView):
+    ''' View to list publicly available posts '''
+
     queryset = Post.objects.filter(is_public=True)
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
 
 
 class ListMyPostView(generics.ListAPIView):
+    ''' View to list posts authored by the authenticated user '''
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        posts = Post.objects.filter(author_uuid=request.user.uuid)
+        posts = Post.objects.filter(author=request.user)
         serializer = PostSerializer(posts, many=True)
-
         return Response(serializer.data)
 
 
 class UpdatePostView(generics.UpdateAPIView):
+    ''' View to update a post '''
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
@@ -44,8 +50,8 @@ class UpdatePostView(generics.UpdateAPIView):
         post = self.get_object()
         user = request.user
 
-        if user != post.author and user.role != '2':
-            raise PermissionDenied('У вас немає прав на редагування цього запису.')
+        if user != post.author and user.role != '2':  # Assuming role '2' is an admin
+            raise PermissionDenied('You do not have permission to edit this post.')
 
         serializer = self.get_serializer(instance=post, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -55,6 +61,8 @@ class UpdatePostView(generics.UpdateAPIView):
 
 
 class DeletePostView(generics.DestroyAPIView):
+    ''' View to delete a post '''
+
     queryset = Post.objects.all()
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticated]
@@ -65,95 +73,88 @@ class DeletePostView(generics.DestroyAPIView):
         user = request.user
 
         if user != post.author and user.role != '2':
-            raise PermissionDenied('У вас немає прав на видалення цього запису.')
+            raise PermissionDenied('You do not have permission to delete this post.')
 
         post.delete()
-        post.save()
-        return Response('Запис успішно видалений')
+        return Response('Post successfully deleted')
 
 
 class SubscribeView(APIView):
+    ''' View to subscribe to a user '''
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request, uuid):
-        try:
-            subscribed_to = User.objects.get(uuid=uuid)
-        except User.DoesNotExist:
-            raise NotFound('Користувача не знайдено.')
-
+        subscribed_to = get_object_or_404(User, uuid=uuid)
         subscriber = request.user
 
-        if subscribed_to.uuid == subscriber.uuid:
-            return Response('Неможливо підписатись на самого себе')
+        if subscribed_to == subscriber:
+            return Response('Cannot subscribe to yourself')
 
-        subscription, created = Subscription.objects.get_or_create(
-            subscriber=subscriber,
-            subscribed_to=subscribed_to,
-        )
-
-        print(created)
+        # Use get_or_create to avoid duplicate subscriptions
+        subscription, created = Subscription.objects.get_or_create(subscriber=subscriber, subscribed_to=subscribed_to)
 
         if not created:
-            return Response('Неможливо підписатися двічі')
+            return Response('Already subscribed')
 
         subscribed_to.subscribers += 1
         subscribed_to.save()
 
-        return Response('Ви успішно підписались на користувача')
+        return Response('Successfully subscribed to the user')
 
 
 class UnsubscribeView(APIView):
+    ''' View to unsubscribe from a user '''
+
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, uuid):
-        try:
-            unsubscribed_to = User.objects.get(uuid=uuid)
-        except User.DoesNotExist:
-            raise NotFound('Користувача не знайдено.')
+        unsubscribed_to = get_object_or_404(User, uuid=uuid)
         unsubscriber = request.user
 
-        if unsubscribed_to.uuid == unsubscriber.uuid:
-            return Response('Неможливо відписатись від самого себе')
+        if unsubscribed_to == unsubscriber:
+            return Response('Cannot unsubscribe from yourself')
 
-        subscription = Subscription.objects.get(
-            subscriber=unsubscriber,
-            subscribed_to=unsubscribed_to,
-        )
-
+        # Ensure subscription exists before deleting
+        subscription = Subscription.objects.get(subscriber=unsubscriber, subscribed_to=unsubscribed_to)
         subscription.delete()
-        if unsubscribed_to.subscribers > 0:
-            unsubscribed_to.subscribers -= 1
-            unsubscribed_to.save()
 
-        return Response('Ви успішно відписались від користувача')
+        unsubscribed_to.subscribers -= 1
+        unsubscribed_to.save()
+
+        return Response('Successfully unsubscribed from the user')
 
 
 class FilterPosts(APIView):
+    ''' View to filter posts by category '''
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request, category_name):
-        posts = Post.objects.filter(
-            category=category_name,
-            is_public=True,
-        )
+        posts = Post.objects.filter(category=category_name, is_public=True)
         serializer = PostSerializer(posts, many=True)
-
         return Response(serializer.data)
 
 
 class CreateCommentView(generics.CreateAPIView):
+    ''' View to create a comment on a post '''
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
 
 
 class CommentsListView(generics.ListAPIView):
+    ''' View to list all comments '''
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
 
 
 class CommentUpdateView(generics.UpdateAPIView):
+    ''' View to update a comment '''
+
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
@@ -163,63 +164,60 @@ class CommentUpdateView(generics.UpdateAPIView):
         user = self.request.user
 
         if user != comment.author and user.role != '2':
-            raise PermissionDenied('У вас немає прав на редагування цього запису.')
+            raise PermissionDenied('You do not have permission to edit this comment.')
 
         return comment
 
 
 class CommentDeleteView(generics.DestroyAPIView):
+    ''' View to delete a comment '''
+
     queryset = Comment.objects.all()
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, uuid):
-        try:
-            instance = Comment.objects.get(uuid=uuid)
-        except Comment.DoesNotExist:
-            return Response({'detail': 'Не знайдено.'})
+        instance = get_object_or_404(Comment, uuid=uuid)
 
         if request.user != instance.author and request.user.role != '2':
-            raise PermissionDenied('У вас немає прав на видалення цього запису.')
+            raise PermissionDenied('You do not have permission to delete this comment.')
 
         instance.delete()
-        return Response({'detail': 'Коментар видалено.'})
+        return Response('Comment deleted successfully')
 
 
 class LikeView(APIView):
+    ''' View to like a post '''
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request, uuid):
-        post = Post.objects.get(uuid=uuid)
+        post = get_object_or_404(Post, uuid=uuid)
 
-        like, created = Like.objects.get_or_create(
-            post=post,
-            author=request.user,
-        )
+        like, created = Like.objects.get_or_create(post=post, author=request.user)
 
         if not created:
-            return Response('Ви вже поставили лайк')
+            return Response('You have already liked this post')
 
         post.likes += 1
         post.save()
 
-        return Response('Ви успішно поставили лайк')
+        return Response('You have successfully liked the post')
 
 
 class DislikeView(APIView):
+    ''' View to dislike a post '''
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request, uuid):
-        post = Post.objects.get(uuid=uuid)
+        post = get_object_or_404(Post, uuid=uuid)
 
-        like, created = Dislike.objects.get_or_create(
-            post=post,
-            author=request.user,
-        )
+        dislike, created = Dislike.objects.get_or_create(post=post, author=request.user)
 
         if not created:
-            return Response('Ви вже поставили дизлайк')
+            return Response('You have already disliked this post')
 
         post.dislikes += 1
         post.save()
 
-        return Response('Ви успішно поставили дизлайк')
+        return Response('You have successfully disliked the post')

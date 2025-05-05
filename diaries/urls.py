@@ -1,20 +1,10 @@
 from django.urls import path
 
 from .views import (
-    CreatePostView,
-    ListPostView,
-    ListMyPostView,
-    UpdatePostView,
-    DeletePostView,
-    SubscribeView,
-    UnsubscribeView,
-    FilterPosts,
-    CreateCommentView,
-    CommentsListView,
-    CommentUpdateView,
-    CommentDeleteView,
-    LikeView,
-    DislikeView,
+    CreatePostView, ListPostView, ListMyPostView, UpdatePostView,
+    DeletePostView, SubscribeView, UnsubscribeView, FilterPosts,
+    CreateCommentView, CommentsListView, CommentUpdateView,
+    CommentDeleteView, LikeView, DislikeView,
 )
 
 
