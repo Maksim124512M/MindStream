@@ -16,7 +16,7 @@ Before running the project, make sure you have the following tools installed:
 
    ```
    git clone https://github.com/Maksim124512M/MindStream.git
-   cd project-name
+   cd mind_stream
    ```
 2. **Create a .env file** <br>
 
