@@ -176,7 +176,7 @@ class Like(models.Model):
 
 
 class Dislike(models.Model):
-    """
+    '''
     Model for storing dislikes on posts.
 
     This model represents a dislike given by a user on a specific post. Each dislike is unique
@@ -191,7 +191,7 @@ class Dislike(models.Model):
     verbose_name (str): The human-readable name for the model in the admin interface.
     verbose_name_plural (str): The plural form of the model name in the admin interface.
     unique_together (tuple): Ensures that each user can only dislike a post once.
-    """
+    '''
 
     uuid = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='disliked_posts')
